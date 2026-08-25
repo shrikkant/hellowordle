@@ -32,7 +32,7 @@ pipeline {
         stage('Build images') {
             steps {
                 withCredentials([
-                    string(credentialsId: 'shri-git-token', variable: 'JWT_SECRET'),
+                    string(credentialsId: 'afx-prod-deploy-target', variable: 'JWT_SECRET'),
                 ]) {
                     sh 'docker compose build --pull'
                 }
@@ -41,7 +41,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 withCredentials([
-                    string(credentialsId: 'shri-git-token', variable: 'JWT_SECRET'),
+                    string(credentialsId: 'afx-prod-deploy-target', variable: 'JWT_SECRET'),
                 ]) {
                     sh 'docker compose up -d --remove-orphans'
                 }
