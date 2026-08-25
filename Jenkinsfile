@@ -10,6 +10,9 @@ pipeline {
     environment {
         COMPOSE_PROJECT_NAME = 'wordbaazi'
         WEB_PORT = '7654'
+        // Optional: set to a Google OAuth Web client ID to enable Sign in with
+        // Google (also baked into the web bundle at image build time).
+        GOOGLE_CLIENT_ID = ''
     }
 
     stages {
@@ -29,8 +32,7 @@ pipeline {
         stage('Build images') {
             steps {
                 withCredentials([
-                    string(credentialsId: 'wordbaazi-jwt-secret', variable: 'JWT_SECRET'),
-                    string(credentialsId: 'wordbaazi-google-client-id', variable: 'GOOGLE_CLIENT_ID'),
+                    string(credentialsId: 'shri-git-token', variable: 'JWT_SECRET'),
                 ]) {
                     sh 'docker compose build --pull'
                 }
@@ -39,8 +41,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 withCredentials([
-                    string(credentialsId: 'wordbaazi-jwt-secret', variable: 'JWT_SECRET'),
-                    string(credentialsId: 'wordbaazi-google-client-id', variable: 'GOOGLE_CLIENT_ID'),
+                    string(credentialsId: 'shri-git-token', variable: 'JWT_SECRET'),
                 ]) {
                     sh 'docker compose up -d --remove-orphans'
                 }

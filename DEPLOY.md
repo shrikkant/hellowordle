@@ -27,9 +27,7 @@ The `Jenkinsfile` at the repo root deploys the compose stack. Requirements on th
 
 ### One-time setup
 
-1. **Manage Jenkins → Credentials → System → Global** — add two **Secret text** credentials:
-   - `wordbaazi-jwt-secret` — output of `openssl rand -hex 32`
-   - `wordbaazi-google-client-id` — your Google OAuth client ID (a placeholder like `unset` is fine until you have one)
+1. Credentials: the pipeline signs session JWTs with the **Secret text** credential `shri-git-token` (already present in this Jenkins). To enable Google sign-in later, set `GOOGLE_CLIENT_ID` in the Jenkinsfile `environment` block to your OAuth Web client ID and re-run.
 2. **New Item → Pipeline** (name it `wordbaazi`):
    - *Pipeline → Definition*: **Pipeline script from SCM**, SCM **Git**, your repository URL, branch `main`, script path `Jenkinsfile`.
    - (The project must be pushed to a git remote Jenkins can reach.)
