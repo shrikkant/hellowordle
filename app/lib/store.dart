@@ -109,4 +109,7 @@ class Store {
 
   bool get seenHelp => _prefs.getBool('seenHelp') ?? false;
   set seenHelp(bool v) => _prefs.setBool('seenHelp', v);
+
+  bool get highContrast => _prefs.getBool('hc') ?? false;
+  set highContrast(bool v) => _prefs.setBool('hc', v);
 }

@@ -16,7 +16,8 @@ Three parts:
 - One game per day per player. Game state persists locally (localStorage / shared_preferences) keyed by puzzle number so refresh/restart resumes mid-game.
 
 ## Design tokens (Wordbaazi — "Peacock & Marigold")
-- Correct (peacock teal) `#0e7c86`, Present (marigold) `#e8a020`, Absent (slate) `#64748b`
+- Correct (peacock teal) `#0e7c86`, Present (marigold) `#e8a020`, Absent (dark charcoal) `#3d4451` — absent must stay much darker than correct so the states differ by lightness for colour-blind players.
+- High contrast mode (persisted user setting, toggle in settings): correct `#e5691e` orange, present `#4f9ee8` blue, absent unchanged. Applies live to board, keyboard, stats highlight, and How To Play examples.
 - Empty tile border `#cbd5e1`; tile with pending letter border `#94a3b8`
 - Keyboard key default bg `#e2e8f0`, key text `#1e293b`; evaluated keys take tile colors with white text
 - Text `#1e293b` (slate-800), page bg white `#ffffff`

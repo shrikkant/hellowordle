@@ -29,7 +29,10 @@ class WordbaaziApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: correctTeal),
         fontFamily: 'Helvetica Neue',
       ),
-      home: const GameScreen(),
+      home: ValueListenableBuilder<bool>(
+        valueListenable: highContrastMode,
+        builder: (context, hc, child) => GameScreen(),
+      ),
     );
   }
 }
@@ -65,6 +68,7 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _init() async {
     final store = await Store.load();
+    highContrastMode.value = store.highContrast;
     final answersRaw = await rootBundle.loadString('assets/answers.txt');
     final validRaw = await rootBundle.loadString('assets/valid-guesses.txt');
     final answers = answersRaw
@@ -281,6 +285,23 @@ class _GameScreenState extends State<GameScreen> {
                 title: Text(user['name'] ?? '', style: const TextStyle(color: ink)),
                 subtitle: Text(user['email'] ?? ''),
               ),
+            ValueListenableBuilder<bool>(
+              valueListenable: highContrastMode,
+              builder: (context, hc, _) => SwitchListTile(
+                value: hc,
+                activeThumbColor: Colors.white,
+                activeTrackColor: correctTeal,
+                title: const Text('High contrast mode',
+                    style:
+                        TextStyle(color: ink, fontWeight: FontWeight.w600)),
+                subtitle: const Text(
+                    'For improved colour vision — orange and blue tiles instead of teal and gold.'),
+                onChanged: (v) {
+                  _store?.highContrast = v;
+                  highContrastMode.value = v;
+                },
+              ),
+            ),
             ListTile(
               leading: Icon(user == null ? Icons.login : Icons.logout, color: ink),
               title: Text(user == null ? 'Sign in with Google' : 'Sign out',
@@ -352,7 +373,7 @@ class _GameScreenState extends State<GameScreen> {
                             TextSpan(text: 'Word'),
                             TextSpan(
                                 text: 'baazi',
-                                style: TextStyle(color: correctTeal)),
+                                style: TextStyle(color: brandTeal)),
                           ],
                         ),
                       ),

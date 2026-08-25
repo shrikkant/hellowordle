@@ -30,6 +30,8 @@ export default function App() {
   const [showHelp, setShowHelp] = useState(() => !localStorage.getItem('hw-seen'));
   const [showStats, setShowStats] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [highContrast, setHighContrast] = useState(() => localStorage.getItem('wb-hc') === '1');
   const [serverStats, setServerStats] = useState<Stats | null>(null);
   const [justWon, setJustWon] = useState(false);
 
@@ -44,6 +46,11 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('hw-seen', '1');
   }, []);
+
+  useEffect(() => {
+    document.body.classList.toggle('high-contrast', highContrast);
+    localStorage.setItem('wb-hc', highContrast ? '1' : '0');
+  }, [highContrast]);
 
   // Load server stats when signed in and stats visible
   useEffect(() => {
@@ -115,7 +122,7 @@ export default function App() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (showHelp || showStats || showAccount) return;
+      if (showHelp || showStats || showAccount || showSettings) return;
       onKey(e.key);
     };
     window.addEventListener('keydown', handler);
@@ -138,7 +145,13 @@ export default function App() {
 
   return (
     <div className="app">
-      <Header user={user} onStats={() => setShowStats(true)} onHelp={() => setShowHelp(true)} onAccount={() => setShowAccount(true)} />
+      <Header
+        user={user}
+        onStats={() => setShowStats(true)}
+        onHelp={() => setShowHelp(true)}
+        onSettings={() => setShowSettings(true)}
+        onAccount={() => setShowAccount(true)}
+      />
       <Board
         guesses={guesses}
         current={current}
@@ -171,6 +184,26 @@ export default function App() {
             setServerStats(null);
           }}
         />
+      )}
+      {showSettings && (
+        <Modal onClose={() => setShowSettings(false)}>
+          <div className="stats">
+            <h2>Settings</h2>
+            <div className="settings-row">
+              <div>
+                <div className="title">High contrast mode</div>
+                <div className="desc">For improved colour vision — orange and blue tiles instead of teal and gold.</div>
+              </div>
+              <button
+                className={`switch${highContrast ? ' on' : ''}`}
+                role="switch"
+                aria-checked={highContrast}
+                aria-label="High contrast mode"
+                onClick={() => setHighContrast((v) => !v)}
+              />
+            </div>
+          </div>
+        </Modal>
       )}
       {showAccount && (
         <Modal onClose={() => setShowAccount(false)}>
