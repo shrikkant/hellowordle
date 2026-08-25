@@ -14,10 +14,10 @@ SPEC.md   Shared game/API/design spec all three follow
 
 ```bash
 cp .env.example .env    # set JWT_SECRET
-docker compose up -d --build    # → http://localhost:8080
+docker compose up -d --build    # → http://localhost:7654
 ```
 
-CI/CD via Jenkins (also dockerized, in `jenkins/`) with the `Jenkinsfile` pipeline: build → test → deploy → smoke test. Full instructions in [DEPLOY.md](DEPLOY.md).
+CI/CD: point a pipeline job in your Jenkins at this repo's `Jenkinsfile` (build → test → deploy → smoke test). Full instructions in [DEPLOY.md](DEPLOY.md).
 
 ## Quick start (local dev)
 

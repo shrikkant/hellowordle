@@ -9,7 +9,7 @@ pipeline {
 
     environment {
         COMPOSE_PROJECT_NAME = 'wordbaazi'
-        WEB_PORT = '8080'
+        WEB_PORT = '7654'
     }
 
     stages {

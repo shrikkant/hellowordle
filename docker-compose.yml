@@ -22,7 +22,7 @@ services:
         VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
         VITE_API_BASE: ""
     ports:
-      - "${WEB_PORT:-8080}:80"
+      - "${WEB_PORT:-7654}:80"
     depends_on:
       server:
         condition: service_healthy

@@ -7,7 +7,7 @@ Two containers: **web** (nginx serving the built React app, proxying `/api` to t
 ```bash
 cp .env.example .env          # then set JWT_SECRET (openssl rand -hex 32)
 docker compose up -d --build
-# → http://localhost:8080  (change WEB_PORT in .env)
+# → http://localhost:7654  (change WEB_PORT in .env)
 ```
 
 `GOOGLE_CLIENT_ID` in `.env` is optional; it is used by the API to verify Google tokens and baked into the web bundle at build time (so rebuild after changing it). For a production domain, add that origin to the OAuth client in Google Cloud Console.
@@ -21,26 +21,19 @@ docker compose down               # stop (data volume kept)
 docker volume rm wordbaazi_wordbaazi-data   # wipe all stats (destructive)
 ```
 
-## Jenkins
+## Jenkins (your existing instance)
 
-A ready-to-run Jenkins lives in `jenkins/` — Jenkins LTS plus the Docker CLI/Compose, talking to the host's Docker daemon through the socket mount. It deploys the app stack on the same machine.
+The `Jenkinsfile` at the repo root deploys the compose stack. Requirements on the Jenkins agent that runs it: **Docker CLI + Compose v2** with access to the Docker daemon of the machine you're deploying to (local socket, or `DOCKER_HOST=ssh://user@host` for a remote box).
 
 ### One-time setup
 
-```bash
-cd jenkins && docker compose up -d --build
-# → http://localhost:8090
-docker exec wordbaazi-jenkins cat /var/jenkins_home/secrets/initialAdminPassword
-```
-
-1. Open http://localhost:8090, paste the initial admin password, choose **Install suggested plugins**, create your admin user.
-2. **Manage Jenkins → Credentials → System → Global** — add two **Secret text** credentials:
+1. **Manage Jenkins → Credentials → System → Global** — add two **Secret text** credentials:
    - `wordbaazi-jwt-secret` — output of `openssl rand -hex 32`
    - `wordbaazi-google-client-id` — your Google OAuth client ID (a placeholder like `unset` is fine until you have one)
-3. **New Item → Pipeline** (name it `wordbaazi`):
+2. **New Item → Pipeline** (name it `wordbaazi`):
    - *Pipeline → Definition*: **Pipeline script from SCM**, SCM **Git**, your repository URL, branch `main`, script path `Jenkinsfile`.
-   - (The project must be pushed to a git remote Jenkins can reach — or use a local path as the repo URL.)
-4. **Build Now**.
+   - (The project must be pushed to a git remote Jenkins can reach.)
+3. **Build Now**.
 
 ### What the pipeline does
 
@@ -55,6 +48,6 @@ On failure it prints `docker compose ps` + recent logs. Old dangling images are 
 
 ### Notes
 
-- The Jenkins container runs as root so it can use the mounted Docker socket without GID juggling — fine for a single-user box; don't expose port 8090 to the internet as-is.
-- Jenkins deploys to the same Docker daemon it runs on. For deploying to a *remote* host, set `DOCKER_HOST=ssh://user@host` in the deploy stage (and add the SSH key as a Jenkins credential).
+- The pipeline uses only Docker build contexts (no `-v` volume mounts), so it also works when Jenkins itself runs in a container against the host's Docker socket.
+- The stack is deployed on whatever daemon the agent's Docker CLI points at; the app comes up on port 7654 of that machine (`WEB_PORT` env in the Jenkinsfile).
 - The Flutter app is not part of this pipeline; mobile releases go through the app stores.
