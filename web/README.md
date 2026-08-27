@@ -1,6 +1,8 @@
 # Wordbaazi — Web
 
-React + Vite + TypeScript client for Wordbaazi, a daily word-guessing game.
+Next.js (App Router) client for Wordbaazi. The game page and the SEO landing pages
+(`/guess-the-word-game`, `/word-coach`, `/english-word-games`) are prerendered
+server-side for SEO; the game board hydrates as a client component.
 
 ## Run
 
@@ -9,21 +11,19 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-The game is fully playable without any configuration — stats are kept in localStorage.
+`/api/*` is proxied by Next rewrites to the NestJS server (`INTERNAL_API_URL`,
+default `http://localhost:3000`), so run `../server` alongside for sign-in/stats.
+The game itself is fully playable without it.
 
-## Google Sign-In (optional, for server-side stats)
+## Env (build-time, baked into the client bundle)
 
-1. Copy `.env.example` to `.env`.
-2. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials), create an **OAuth client ID** of type **Web application** with authorized JavaScript origin `http://localhost:5173`.
-3. Put the client ID in `VITE_GOOGLE_CLIENT_ID` (use the same ID for the server's `GOOGLE_CLIENT_ID`).
-4. Start the server (`../server`) and sign in via the account icon (top right).
+Copy `.env.example` to `.env`:
 
-When signed in, finished games are posted to the API and the stats panel shows server-side stats; signed out, it falls back to local stats.
+- `NEXT_PUBLIC_GOOGLE_CLIENT_ID` — Google OAuth Web client ID (origin `http://localhost:5173` for dev)
+- `NEXT_PUBLIC_GTM_ID` — Google Tag Manager container (leave empty in dev)
 
-## Build
+## Production
 
-```bash
-npm run build      # outputs dist/ — deploy anywhere static
-```
-
-Set `VITE_API_BASE` to your deployed API URL for production builds.
+`npm run build` produces a standalone server (`output: 'standalone'`); the
+Dockerfile runs it on port 3000. In Docker Compose, `INTERNAL_API_URL` points at
+the API container and the GTM/Google IDs arrive as build args from the Jenkinsfile.

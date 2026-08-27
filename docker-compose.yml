@@ -19,11 +19,12 @@ services:
     build:
       context: ./web
       args:
-        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-        VITE_GTM_ID: ${GTM_ID:-}
-        VITE_API_BASE: ""
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+        NEXT_PUBLIC_GTM_ID: ${GTM_ID:-}
+    environment:
+      INTERNAL_API_URL: http://server:3000
     ports:
-      - "${WEB_PORT:-7654}:80"
+      - "${WEB_PORT:-7654}:3000"
     depends_on:
       server:
         condition: service_healthy

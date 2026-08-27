@@ -54,9 +54,9 @@ pipeline {
                 sh '''
                     sleep 3
                     docker run --rm --network wordbaazi_default curlimages/curl:latest \
-                        -sf http://web/api/health
+                        -sf http://web:3000/api/health
                     docker run --rm --network wordbaazi_default curlimages/curl:latest \
-                        -sf -o /dev/null http://web/
+                        -sf -o /dev/null http://web:3000/
                 '''
             }
         }

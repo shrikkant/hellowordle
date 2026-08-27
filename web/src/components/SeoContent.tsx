@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function SeoContent() {
   return (
     <section className="seo">
@@ -44,6 +46,12 @@ export default function SeoContent() {
         Yes — word puzzle games give you daily, low-pressure practice with spelling and recall, which is exactly how
         vocabulary sticks.
       </p>
+
+      <nav className="seo-footer-nav" aria-label="More about Wordbaazi">
+        <Link href="/guess-the-word-game">Guess the Word Game</Link>
+        <Link href="/word-coach">Word Coach</Link>
+        <Link href="/english-word-games">English Word Games</Link>
+      </nav>
     </section>
   );
 }

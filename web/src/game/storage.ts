@@ -24,7 +24,10 @@ const RESULTS_KEY = 'wb-results';
 const TOKEN_KEY = 'hw-token';
 const USER_KEY = 'hw-user';
 
+const hasStorage = () => typeof window !== 'undefined' && !!window.localStorage;
+
 export function loadGame(puzzleNumber: number): SavedGame | null {
+  if (!hasStorage()) return null;
   try {
     const raw = localStorage.getItem(GAME_PREFIX + puzzleNumber);
     return raw ? JSON.parse(raw) : null;
@@ -34,10 +37,12 @@ export function loadGame(puzzleNumber: number): SavedGame | null {
 }
 
 export function saveGame(game: SavedGame): void {
+  if (!hasStorage()) return;
   localStorage.setItem(GAME_PREFIX + game.puzzleNumber, JSON.stringify(game));
 }
 
 export function getResults(): Record<number, PuzzleResult> {
+  if (!hasStorage()) return {};
   try {
     const raw = localStorage.getItem(RESULTS_KEY);
     return raw ? JSON.parse(raw) : {};
@@ -47,6 +52,7 @@ export function getResults(): Record<number, PuzzleResult> {
 }
 
 export function recordResult(puzzleNumber: number, won: boolean, guesses: number | null): void {
+  if (!hasStorage()) return;
   const results = getResults();
   if (results[puzzleNumber]) return;
   results[puzzleNumber] = { won, guesses };
@@ -86,8 +92,9 @@ export function getLocalStats(): Stats {
 
 export interface User { id: string; name: string; email: string; picture: string }
 
-export function getToken(): string | null { return localStorage.getItem(TOKEN_KEY); }
+export function getToken(): string | null { return hasStorage() ? localStorage.getItem(TOKEN_KEY) : null; }
 export function getUser(): User | null {
+  if (!hasStorage()) return null;
   try {
     const raw = localStorage.getItem(USER_KEY);
     return raw ? JSON.parse(raw) : null;

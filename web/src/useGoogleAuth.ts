@@ -3,7 +3,7 @@ import { signInWithGoogle } from './api';
 import type { User } from './game/storage';
 import { clearSession, getUser, saveSession } from './game/storage';
 
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
 declare global {
   interface Window {
@@ -19,9 +19,14 @@ declare global {
 }
 
 export function useGoogleAuth(onError: (msg: string) => void) {
-  const [user, setUser] = useState<User | null>(() => getUser());
+  const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
   const initialized = useRef(false);
+
+  // Load the persisted session after mount so SSR and hydration agree.
+  useEffect(() => {
+    setUser(getUser());
+  }, []);
 
   useEffect(() => {
     if (!CLIENT_ID) return;
