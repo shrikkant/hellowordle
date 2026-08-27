@@ -14,78 +14,73 @@ export interface Stats {
   distribution: Record<number, number>;
 }
 
-interface LocalStatsRaw {
-  played: number;
-  wins: number;
-  currentStreak: number;
-  maxStreak: number;
-  lastWonPuzzle: number | null;
-  lastPlayedPuzzle: number | null;
-  distribution: Record<number, number>;
+export interface PuzzleResult {
+  won: boolean;
+  guesses: number | null;
 }
 
-const GAME_KEY = 'hw-game';
-const STATS_KEY = 'hw-stats';
+const GAME_PREFIX = 'wb-game-';
+const RESULTS_KEY = 'wb-results';
 const TOKEN_KEY = 'hw-token';
 const USER_KEY = 'hw-user';
 
 export function loadGame(puzzleNumber: number): SavedGame | null {
   try {
-    const raw = localStorage.getItem(GAME_KEY);
-    if (!raw) return null;
-    const game: SavedGame = JSON.parse(raw);
-    return game.puzzleNumber === puzzleNumber ? game : null;
+    const raw = localStorage.getItem(GAME_PREFIX + puzzleNumber);
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
 }
 
 export function saveGame(game: SavedGame): void {
-  localStorage.setItem(GAME_KEY, JSON.stringify(game));
+  localStorage.setItem(GAME_PREFIX + game.puzzleNumber, JSON.stringify(game));
 }
 
-function emptyStats(): LocalStatsRaw {
-  return {
-    played: 0, wins: 0, currentStreak: 0, maxStreak: 0,
-    lastWonPuzzle: null, lastPlayedPuzzle: null,
-    distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 },
-  };
-}
-
-function loadRawStats(): LocalStatsRaw {
+export function getResults(): Record<number, PuzzleResult> {
   try {
-    const raw = localStorage.getItem(STATS_KEY);
-    return raw ? { ...emptyStats(), ...JSON.parse(raw) } : emptyStats();
+    const raw = localStorage.getItem(RESULTS_KEY);
+    return raw ? JSON.parse(raw) : {};
   } catch {
-    return emptyStats();
+    return {};
   }
 }
 
 export function recordResult(puzzleNumber: number, won: boolean, guesses: number | null): void {
-  const s = loadRawStats();
-  if (s.lastPlayedPuzzle === puzzleNumber) return;
-  s.played++;
-  s.lastPlayedPuzzle = puzzleNumber;
-  if (won && guesses != null) {
-    s.wins++;
-    s.distribution[guesses] = (s.distribution[guesses] ?? 0) + 1;
-    s.currentStreak = s.lastWonPuzzle === puzzleNumber - 1 ? s.currentStreak + 1 : 1;
-    s.maxStreak = Math.max(s.maxStreak, s.currentStreak);
-    s.lastWonPuzzle = puzzleNumber;
-  } else {
-    s.currentStreak = 0;
-  }
-  localStorage.setItem(STATS_KEY, JSON.stringify(s));
+  const results = getResults();
+  if (results[puzzleNumber]) return;
+  results[puzzleNumber] = { won, guesses };
+  localStorage.setItem(RESULTS_KEY, JSON.stringify(results));
 }
 
+// Streaks run over consecutive puzzle numbers; the current streak is the run of
+// wins ending at the most recent puzzle played (archive fills extend it).
 export function getLocalStats(): Stats {
-  const s = loadRawStats();
+  const results = getResults();
+  const numbers = Object.keys(results).map(Number).sort((a, b) => a - b);
+  const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+  let wins = 0;
+  let maxStreak = 0;
+  let run = 0;
+  let prev: number | null = null;
+  for (const n of numbers) {
+    const r = results[n];
+    if (r.won) {
+      wins++;
+      if (r.guesses != null) distribution[r.guesses] = (distribution[r.guesses] ?? 0) + 1;
+      run = prev === n - 1 && run > 0 ? run + 1 : 1;
+    } else {
+      run = 0;
+    }
+    maxStreak = Math.max(maxStreak, run);
+    prev = n;
+  }
   return {
-    played: s.played,
-    winPct: s.played ? Math.round((s.wins / s.played) * 100) : 0,
-    currentStreak: s.currentStreak,
-    maxStreak: s.maxStreak,
-    distribution: s.distribution,
+    played: numbers.length,
+    winPct: numbers.length ? Math.round((wins / numbers.length) * 100) : 0,
+    currentStreak: run,
+    maxStreak,
+    distribution,
   };
 }
 

@@ -1,4 +1,5 @@
-/// Local persistence: in-progress game per puzzle and lifetime stats.
+/// Local persistence: per-puzzle game state and a results map that local
+/// stats are computed from (mirrors the web client's storage semantics).
 library;
 
 import 'dart:convert';
@@ -7,33 +8,47 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'game.dart';
 
+class PuzzleResult {
+  PuzzleResult({required this.won, this.guesses});
+  final bool won;
+  final int? guesses; // null when lost
+
+  Map<String, dynamic> toJson() => {'won': won, 'guesses': guesses};
+  static PuzzleResult fromJson(Map<String, dynamic> j) =>
+      PuzzleResult(won: j['won'] ?? false, guesses: j['guesses']);
+}
+
 class LocalStats {
   int played = 0;
   int wins = 0;
   int currentStreak = 0;
   int maxStreak = 0;
   List<int> distribution = List.filled(6, 0);
-  int lastWonPuzzle = -10;
 
   int get winPct => played == 0 ? 0 : ((wins / played) * 100).round();
 
-  Map<String, dynamic> toJson() => {
-        'played': played,
-        'wins': wins,
-        'currentStreak': currentStreak,
-        'maxStreak': maxStreak,
-        'distribution': distribution,
-        'lastWonPuzzle': lastWonPuzzle,
-      };
-
-  static LocalStats fromJson(Map<String, dynamic> j) {
+  /// Streaks run over consecutive puzzle numbers; the current streak is the
+  /// run of wins ending at the highest played puzzle (archive fills extend it).
+  static LocalStats fromResults(Map<int, PuzzleResult> results) {
     final s = LocalStats();
-    s.played = j['played'] ?? 0;
-    s.wins = j['wins'] ?? 0;
-    s.currentStreak = j['currentStreak'] ?? 0;
-    s.maxStreak = j['maxStreak'] ?? 0;
-    s.distribution = List<int>.from(j['distribution'] ?? List.filled(6, 0));
-    s.lastWonPuzzle = j['lastWonPuzzle'] ?? -10;
+    final numbers = results.keys.toList()..sort();
+    var run = 0;
+    int? prev;
+    for (final n in numbers) {
+      final r = results[n]!;
+      if (r.won) {
+        s.wins++;
+        final g = r.guesses;
+        if (g != null && g >= 1 && g <= 6) s.distribution[g - 1]++;
+        run = (prev == n - 1 && run > 0) ? run + 1 : 1;
+      } else {
+        run = 0;
+      }
+      if (run > s.maxStreak) s.maxStreak = run;
+      prev = n;
+    }
+    s.played = numbers.length;
+    s.currentStreak = run;
     return s;
   }
 }
@@ -45,52 +60,48 @@ class Store {
   static Future<Store> load() async =>
       Store(await SharedPreferences.getInstance());
 
-  // ---- in-progress game ----
+  // ---- per-puzzle game state ----
 
   void saveGame(GameState g) {
     _prefs.setString(
-        'game',
+        'game-${g.puzzleNumber}',
         jsonEncode({
-          'puzzle': g.puzzleNumber,
           'guesses': g.guesses,
           'status': g.status.name,
         }));
   }
 
-  /// Restores guesses/status into [g] if a saved game matches its puzzle.
+  /// Restores guesses/status into [g] from its puzzle's saved slot, if any.
   void restoreInto(GameState g) {
-    final raw = _prefs.getString('game');
+    final raw = _prefs.getString('game-${g.puzzleNumber}');
     if (raw == null) return;
     final j = jsonDecode(raw) as Map<String, dynamic>;
-    if (j['puzzle'] != g.puzzleNumber) return;
     g.guesses.addAll(List<String>.from(j['guesses'] ?? []));
     g.status = GameStatus.values
         .firstWhere((s) => s.name == j['status'], orElse: () => GameStatus.playing);
   }
 
-  // ---- stats ----
+  // ---- results & stats ----
 
-  LocalStats stats() {
-    final raw = _prefs.getString('stats');
-    if (raw == null) return LocalStats();
-    return LocalStats.fromJson(jsonDecode(raw));
+  Map<int, PuzzleResult> results() {
+    final raw = _prefs.getString('results');
+    if (raw == null) return {};
+    final j = jsonDecode(raw) as Map<String, dynamic>;
+    return j.map((k, v) => MapEntry(int.parse(k), PuzzleResult.fromJson(v)));
   }
 
   void recordFinish(GameState g) {
-    final s = stats();
-    s.played++;
-    if (g.status == GameStatus.won) {
-      s.wins++;
-      s.distribution[g.guesses.length - 1]++;
-      s.currentStreak =
-          s.lastWonPuzzle == g.puzzleNumber - 1 ? s.currentStreak + 1 : 1;
-      if (s.currentStreak > s.maxStreak) s.maxStreak = s.currentStreak;
-      s.lastWonPuzzle = g.puzzleNumber;
-    } else {
-      s.currentStreak = 0;
-    }
-    _prefs.setString('stats', jsonEncode(s.toJson()));
+    final all = results();
+    if (all.containsKey(g.puzzleNumber)) return; // first result stands
+    all[g.puzzleNumber] = PuzzleResult(
+      won: g.status == GameStatus.won,
+      guesses: g.status == GameStatus.won ? g.guesses.length : null,
+    );
+    _prefs.setString('results',
+        jsonEncode(all.map((k, v) => MapEntry('$k', v.toJson()))));
   }
+
+  LocalStats stats() => LocalStats.fromResults(results());
 
   // ---- auth/session ----
 

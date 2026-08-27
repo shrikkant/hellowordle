@@ -15,6 +15,10 @@ int puzzleNumberFor(DateTime now) {
   return a.difference(b).inDays + 1;
 }
 
+/// Local calendar date of puzzle [n] (#1 = the epoch day).
+DateTime puzzleDateFor(int n) =>
+    DateTime(baaziEpoch.year, baaziEpoch.month, baaziEpoch.day + (n - 1));
+
 /// Evaluate [guess] against [answer]. Greens consume answer letters first,
 /// then yellows are assigned left-to-right from remaining letters.
 List<TileState> evaluate(String guess, String answer) {

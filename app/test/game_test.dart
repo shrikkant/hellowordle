@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hellowordle/game.dart';
+import 'package:hellowordle/store.dart';
 
 const c = TileState.correct;
 const p = TileState.present;
@@ -112,6 +113,52 @@ void main() {
       expect(ks['r'], c);
       expect(ks['c'], c); // green at index 3 beats yellow at index 0
       expect(ks['i'], c);
+    });
+  });
+
+  group('LocalStats.fromResults', () {
+    PuzzleResult win(int guesses) => PuzzleResult(won: true, guesses: guesses);
+    PuzzleResult loss() => PuzzleResult(won: false);
+
+    test('empty results', () {
+      final s = LocalStats.fromResults({});
+      expect(s.played, 0);
+      expect(s.winPct, 0);
+      expect(s.currentStreak, 0);
+      expect(s.maxStreak, 0);
+    });
+
+    test('consecutive wins build a streak; distribution counts guesses', () {
+      final s = LocalStats.fromResults({1: win(4), 2: win(3), 3: win(4)});
+      expect(s.played, 3);
+      expect(s.winPct, 100);
+      expect(s.currentStreak, 3);
+      expect(s.maxStreak, 3);
+      expect(s.distribution, [0, 0, 1, 2, 0, 0]);
+    });
+
+    test('a gap in puzzle numbers breaks the streak', () {
+      // Won #1-#2, skipped #3, won #4: current streak restarts at #4.
+      final s = LocalStats.fromResults({1: win(2), 2: win(5), 4: win(6)});
+      expect(s.played, 3);
+      expect(s.currentStreak, 1);
+      expect(s.maxStreak, 2);
+    });
+
+    test('a loss resets the current streak but keeps max', () {
+      final s = LocalStats.fromResults({1: win(1), 2: win(2), 3: loss()});
+      expect(s.played, 3);
+      expect(s.winPct, 67);
+      expect(s.currentStreak, 0);
+      expect(s.maxStreak, 2);
+      expect(s.distribution, [1, 1, 0, 0, 0, 0]);
+    });
+
+    test('archive fill-in: playing an older puzzle joins runs', () {
+      // Won #1 and #3 first, then filled #2 - all three form one run.
+      final s = LocalStats.fromResults({1: win(3), 2: win(4), 3: win(3)});
+      expect(s.currentStreak, 3);
+      expect(s.maxStreak, 3);
     });
   });
 }

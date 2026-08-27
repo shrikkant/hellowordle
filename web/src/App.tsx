@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getAnswer, getPuzzleNumber, isValidWord, keyboardStates } from './game/logic';
+import { getAnswer, getPuzzleDate, getPuzzleNumber, isValidWord, keyboardStates } from './game/logic';
 import type { GameStatus } from './game/logic';
-import { getLocalStats, loadGame, recordResult, saveGame } from './game/storage';
+import { getLocalStats, getResults, loadGame, recordResult, saveGame } from './game/storage';
 import type { Stats } from './game/storage';
 import { fetchStats, postGame } from './api';
 import { useGoogleAuth } from './useGoogleAuth';
@@ -10,6 +10,7 @@ import Board from './components/Board';
 import Keyboard from './components/Keyboard';
 import HowToPlay from './components/HowToPlay';
 import StatsPanel from './components/StatsPanel';
+import Archive from './components/Archive';
 import Modal from './components/Modal';
 
 const WIN_TOASTS = ['Chha gaye!', 'Zabardast!', 'Kya baat hai!', 'Shabash!', 'Badhiya!', 'Bach gaye!'];
@@ -17,13 +18,14 @@ const WIN_TOASTS = ['Chha gaye!', 'Zabardast!', 'Kya baat hai!', 'Shabash!', 'Ba
 let toastId = 0;
 
 export default function App() {
-  const puzzleNumber = useMemo(() => getPuzzleNumber(), []);
+  const today = useMemo(() => getPuzzleNumber(), []);
+  const [puzzleNumber, setPuzzleNumber] = useState(today);
   const answer = useMemo(() => getAnswer(puzzleNumber), [puzzleNumber]);
 
-  const saved = useMemo(() => loadGame(puzzleNumber), [puzzleNumber]);
-  const [guesses, setGuesses] = useState<string[]>(saved?.guesses ?? []);
-  const [status, setStatus] = useState<GameStatus>(saved?.status ?? 'playing');
+  const [guesses, setGuesses] = useState<string[]>(() => loadGame(today)?.guesses ?? []);
+  const [status, setStatus] = useState<GameStatus>(() => loadGame(today)?.status ?? 'playing');
   const [current, setCurrent] = useState('');
+  const [showArchive, setShowArchive] = useState(false);
   const [animateRowIndex, setAnimateRowIndex] = useState<number | null>(null);
   const [shake, setShake] = useState(false);
   const [toasts, setToasts] = useState<{ id: number; text: string }[]>([]);
@@ -122,12 +124,12 @@ export default function App() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (showHelp || showStats || showAccount || showSettings) return;
+      if (showHelp || showStats || showAccount || showSettings || showArchive) return;
       onKey(e.key);
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [onKey, showHelp, showStats, showAccount]);
+  }, [onKey, showHelp, showStats, showAccount, showSettings, showArchive]);
 
   const kbStates = useMemo(
     () => keyboardStates(animateRowIndex !== null ? guesses.slice(0, -1) : guesses, answer),
@@ -140,6 +142,20 @@ export default function App() {
     setShowAccount(true);
   };
 
+  const switchPuzzle = useCallback(
+    (n: number) => {
+      if (animateRowIndex !== null) return; // don't switch mid-reveal
+      const saved = loadGame(n);
+      setPuzzleNumber(n);
+      setGuesses(saved?.guesses ?? []);
+      setStatus(saved?.status ?? 'playing');
+      setCurrent('');
+      setJustWon(false);
+      setShowArchive(false);
+    },
+    [animateRowIndex]
+  );
+
   const stats = user && serverStats ? serverStats : getLocalStats();
   const todayWin = status === 'won' ? guesses.length : null;
 
@@ -147,12 +163,25 @@ export default function App() {
     <div className="app">
       <Header
         user={user}
+        onArchive={() => setShowArchive(true)}
         onStats={() => setShowStats(true)}
         onHelp={() => setShowHelp(true)}
         onSettings={() => setShowSettings(true)}
         onAccount={() => setShowAccount(true)}
       />
+      {puzzleNumber !== today && (
+        <div className="archive-banner">
+          <span>
+            Archive · Puzzle #{puzzleNumber} ·{' '}
+            {new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(getPuzzleDate(puzzleNumber))}
+          </span>
+          <button className="link-btn" onClick={() => switchPuzzle(today)}>
+            Back to today
+          </button>
+        </div>
+      )}
       <Board
+        key={puzzleNumber}
         guesses={guesses}
         current={current}
         answer={answer}
@@ -171,6 +200,15 @@ export default function App() {
         ))}
       </div>
 
+      {showArchive && (
+        <Archive
+          today={today}
+          current={puzzleNumber}
+          results={getResults()}
+          onPick={switchPuzzle}
+          onClose={() => setShowArchive(false)}
+        />
+      )}
       {showHelp && <HowToPlay onClose={() => setShowHelp(false)} signedIn={!!user} onSignIn={openSignIn} />}
       {showStats && (
         <StatsPanel

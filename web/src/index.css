@@ -398,3 +398,42 @@ body {
   transition: left 150ms;
 }
 .switch.on::after { left: 23px; }
+
+/* Archive */
+.archive-list { display: flex; flex-direction: column; gap: 6px; }
+.archive-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border-empty);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 15px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+.archive-row:hover { background: #f6f8fa; }
+.archive-row.current { border-color: var(--correct); border-width: 2px; }
+.archive-num { font-weight: 700; width: 44px; }
+.archive-date { flex: 1; color: #6b7280; }
+.archive-status { font-weight: 600; color: var(--correct); }
+.archive-status.won { color: var(--correct); }
+.archive-status.lost { color: #9aa2af; }
+
+/* Archive banner under header */
+.archive-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #f1f5f9;
+  border-bottom: 1px solid var(--border-empty);
+}
+.archive-banner .link-btn { font-size: 13px; font-weight: 600; }

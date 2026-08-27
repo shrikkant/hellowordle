@@ -12,6 +12,10 @@ export function getPuzzleNumber(now: Date = new Date()): number {
   return Math.round((today.getTime() - start.getTime()) / 86400000) + 1;
 }
 
+export function getPuzzleDate(puzzleNumber: number): Date {
+  return new Date(EPOCH.getFullYear(), EPOCH.getMonth(), EPOCH.getDate() + (puzzleNumber - 1));
+}
+
 export function getAnswer(puzzleNumber: number): string {
   const i = puzzleNumber - 1;
   return ANSWERS[((i % ANSWERS.length) + ANSWERS.length) % ANSWERS.length];

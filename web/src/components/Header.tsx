@@ -2,17 +2,18 @@ import type { User } from '../game/storage';
 
 interface HeaderProps {
   user: User | null;
+  onArchive: () => void;
   onStats: () => void;
   onHelp: () => void;
   onSettings: () => void;
   onAccount: () => void;
 }
 
-export default function Header({ user, onStats, onHelp, onSettings, onAccount }: HeaderProps) {
+export default function Header({ user, onArchive, onStats, onHelp, onSettings, onAccount }: HeaderProps) {
   return (
     <header className="header">
       <div className="header-left">
-        <button className="icon-btn" aria-label="Menu">
+        <button className="icon-btn" aria-label="Archive" onClick={onArchive}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 6h18M3 12h18M3 18h18" />
           </svg>

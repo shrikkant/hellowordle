@@ -7,6 +7,7 @@ import 'api.dart';
 import 'game.dart';
 import 'store.dart';
 import 'theme.dart';
+import 'widgets/archive.dart';
 import 'widgets/how_to_play.dart';
 import 'widgets/keyboard.dart';
 import 'widgets/stats_sheet.dart';
@@ -49,6 +50,7 @@ class _GameScreenState extends State<GameScreen> {
   List<String> _answers = [];
   Set<String> _valid = {};
   GameState? _game;
+  int _today = 1;
 
   int _revealedRows = 0;
   int _animateRow = -1;
@@ -93,6 +95,7 @@ class _GameScreenState extends State<GameScreen> {
       _answers = answers;
       _valid = valid;
       _game = game;
+      _today = n;
       _revealedRows = game.guesses.length;
     });
 
@@ -102,6 +105,33 @@ class _GameScreenState extends State<GameScreen> {
         if (mounted) showHowToPlay(context, onSignInTap: _signIn);
       });
     }
+  }
+
+  // ---- archive ----
+
+  void _switchPuzzle(int n) {
+    if (_busy || _store == null || _answers.isEmpty) return;
+    final game = GameState(
+        puzzleNumber: n, answer: _answers[(n - 1) % _answers.length]);
+    _store!.restoreInto(game);
+    setState(() {
+      _game = game;
+      _revealedRows = game.guesses.length;
+      _animateRow = -1;
+      _popCell = '';
+    });
+  }
+
+  void _showArchive() {
+    final g = _game;
+    if (g == null || _busy) return;
+    showArchiveSheet(
+      context,
+      today: _today,
+      current: g.puzzleNumber,
+      results: _store!.results(),
+      onPick: _switchPuzzle,
+    );
   }
 
   // ---- input ----
@@ -357,7 +387,7 @@ class _GameScreenState extends State<GameScreen> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.menu, color: ink),
-                    onPressed: () {},
+                    onPressed: _showArchive,
                   ),
                   Expanded(
                     child: Center(
@@ -401,11 +431,46 @@ class _GameScreenState extends State<GameScreen> {
                 ],
               ),
             ),
+            if (g.puzzleNumber != _today)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF1F5F9),
+                  border: Border(bottom: BorderSide(color: emptyBorder)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Archive · Puzzle #${g.puzzleNumber} · ${puzzleDateLabel(g.puzzleNumber, year: false)}',
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: ink),
+                    ),
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      onTap: () => _switchPuzzle(_today),
+                      child: Text(
+                        'Back to today',
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: correctTeal,
+                            decoration: TextDecoration.underline,
+                            decorationColor: correctTeal),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             Expanded(
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Board(
+                    key: ValueKey(g.puzzleNumber),
                     game: g,
                     revealedRows: _revealedRows,
                     animateRow: _animateRow,
