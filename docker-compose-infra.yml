@@ -2,6 +2,11 @@
 # across app deploys. Start once on the server:
 #   docker compose -f docker-compose-infra.yml up -d
 # The app stack joins the shared "wordbaazi-infra" network to reach Postgres.
+#
+# The project name is pinned so this stack never collides with the app stack
+# (which uses project "wordbaazi"), regardless of the directory it runs from.
+name: wordbaazi-infra
+
 services:
   postgres:
     image: postgres:17-alpine
