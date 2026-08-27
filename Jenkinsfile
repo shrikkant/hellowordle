@@ -12,6 +12,7 @@ pipeline {
         WEB_PORT = '7654'
         // Optional: set to a Google OAuth Web client ID to enable Sign in with
         // Google (also baked into the web bundle at image build time).
+        GTM_ID = 'GTM-N824MS5T'
         GOOGLE_CLIENT_ID = '926645167761-nk4gukuu06oj19hg2md7tlkff6a9u2gm.apps.googleusercontent.com'
     }
 

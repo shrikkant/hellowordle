@@ -4,6 +4,7 @@ import type { GameStatus } from './game/logic';
 import { getLocalStats, getResults, loadGame, recordResult, saveGame } from './game/storage';
 import type { Stats } from './game/storage';
 import { fetchStats, postGame } from './api';
+import { gtmEvent } from './gtm';
 import { useGoogleAuth } from './useGoogleAuth';
 import Header from './components/Header';
 import Board from './components/Board';
@@ -12,6 +13,7 @@ import HowToPlay from './components/HowToPlay';
 import StatsPanel from './components/StatsPanel';
 import Archive from './components/Archive';
 import Modal from './components/Modal';
+import SeoContent from './components/SeoContent';
 
 const WIN_TOASTS = ['Chha gaye!', 'Zabardast!', 'Kya baat hai!', 'Shabash!', 'Badhiya!', 'Bach gaye!'];
 
@@ -67,6 +69,12 @@ export default function App() {
       setStatus(newStatus);
       saveGame({ puzzleNumber, guesses: finalGuesses, status: newStatus });
       recordResult(puzzleNumber, won, won ? finalGuesses.length : null);
+      gtmEvent('game_complete', {
+        puzzle_number: puzzleNumber,
+        won,
+        guesses: won ? finalGuesses.length : 6,
+        signed_in: !!user,
+      });
       if (won) {
         setJustWon(true);
         toast(WIN_TOASTS[finalGuesses.length - 1], 2000);
@@ -160,6 +168,7 @@ export default function App() {
   const todayWin = status === 'won' ? guesses.length : null;
 
   return (
+    <>
     <div className="app">
       <Header
         user={user}
@@ -281,5 +290,7 @@ export default function App() {
         </Modal>
       )}
     </div>
+    <SeoContent />
+    </>
   );
 }
