@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { OAuth2Client } from 'google-auth-library';
 import * as jwt from 'jsonwebtoken';
-import { db } from './db';
+import { pool } from './db';
 import { AuthGuard } from './auth.guard';
 
 const googleClient = new OAuth2Client();
@@ -44,10 +44,11 @@ export class AuthController {
       name: payload.name ?? null,
       picture: payload.picture ?? null,
     };
-    db.prepare(
-      `INSERT INTO users (id, email, name, picture) VALUES (@id, @email, @name, @picture)
-       ON CONFLICT(id) DO UPDATE SET email=@email, name=@name, picture=@picture`,
-    ).run(user);
+    await pool.query(
+      `INSERT INTO users (id, email, name, picture) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, name = EXCLUDED.name, picture = EXCLUDED.picture`,
+      [user.id, user.email, user.name, user.picture],
+    );
 
     const token = jwt.sign({ sub: user.id }, process.env.JWT_SECRET || 'dev-secret', {
       expiresIn: '30d',
@@ -57,11 +58,11 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthGuard)
-  me(@Req() req: { userId: string }) {
-    const user = db
-      .prepare('SELECT id, name, email, picture FROM users WHERE id = ?')
-      .get(req.userId);
-    if (!user) throw new UnauthorizedException('Unknown user');
-    return user;
+  async me(@Req() req: { userId: string }) {
+    const { rows } = await pool.query('SELECT id, name, email, picture FROM users WHERE id = $1', [
+      req.userId,
+    ]);
+    if (!rows[0]) throw new UnauthorizedException('Unknown user');
+    return rows[0];
   }
 }

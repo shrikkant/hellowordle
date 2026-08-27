@@ -1,6 +1,6 @@
 # Wordbaazi Server
 
-NestJS API for Wordbaazi. Google Sign-In auth, game results and stats stored in SQLite (`data/wordbaazi.sqlite`, auto-created on first boot).
+NestJS API for Wordbaazi. Google Sign-In auth, game results and stats stored in Postgres (`data/wordbaazi.postgres`, auto-created on first boot).
 
 ## Setup
 

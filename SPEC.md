@@ -42,7 +42,7 @@ Three parts:
 - `POST /api/games` (Bearer) body `{ puzzleNumber: number, won: boolean, guesses: number|null, board: string[] }` — `guesses` null when lost; `board` = the guessed words. Idempotent per (user, puzzleNumber): repeat posts ignored, returns saved record. → `{ ok: true }`
 - `GET /api/stats` (Bearer) → `{ played, winPct, currentStreak, maxStreak, distribution: {1..6: number} }`. Streak = consecutive puzzleNumbers won (a missed day breaks it; computed against latest played puzzle).
 - CORS enabled for any origin (dev-simple).
-- SQLite file `server/data/hellowordle.sqlite` via better-sqlite3 (no TypeORM needed — keep it thin). Tables: `users(id TEXT pk = google sub, email, name, picture, created_at)`, `games(user_id, puzzle_number, won, guesses, board_json, created_at, PRIMARY KEY(user_id, puzzle_number))`.
+- Postgres via `pg` (no ORM — keep it thin), connection from `DATABASE_URL`; schema auto-created on boot. The Postgres container comes from `docker-compose-infra.yml` (shared `wordbaazi-infra` network, `pgdata` volume). Tables: `users(id TEXT pk = google sub, email, name, picture, created_at)`, `games(user_id, puzzle_number, won BOOLEAN, guesses, board_json, created_at, PRIMARY KEY(user_id, puzzle_number))`.
 - Env: `.env` with `GOOGLE_CLIENT_ID`, `JWT_SECRET`, `PORT=3000`. Provide `.env.example`.
 
 ## Client behavior

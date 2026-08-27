@@ -1,10 +1,10 @@
 import { BadRequestException, Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
-import { db } from './db';
+import { pool } from './db';
 import { AuthGuard } from './auth.guard';
 
 interface GameRow {
   puzzle_number: number;
-  won: number;
+  won: boolean;
   guesses: number | null;
 }
 
@@ -12,7 +12,7 @@ interface GameRow {
 @UseGuards(AuthGuard)
 export class GamesController {
   @Post('games')
-  saveGame(
+  async saveGame(
     @Req() req: { userId: string },
     @Body() body: { puzzleNumber?: unknown; won?: unknown; guesses?: unknown; board?: unknown },
   ) {
@@ -32,20 +32,21 @@ export class GamesController {
       throw new BadRequestException('guesses is required when won is true');
     }
     // Idempotent: first write per (user, puzzle) wins; repeats are ignored.
-    db.prepare(
-      `INSERT OR IGNORE INTO games (user_id, puzzle_number, won, guesses, board_json)
-       VALUES (?, ?, ?, ?, ?)`,
-    ).run(req.userId, body.puzzleNumber, body.won ? 1 : 0, body.guesses, JSON.stringify(body.board));
+    await pool.query(
+      `INSERT INTO games (user_id, puzzle_number, won, guesses, board_json)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (user_id, puzzle_number) DO NOTHING`,
+      [req.userId, body.puzzleNumber, body.won, body.guesses, JSON.stringify(body.board)],
+    );
     return { ok: true };
   }
 
   @Get('stats')
-  stats(@Req() req: { userId: string }) {
-    const rows = db
-      .prepare(
-        'SELECT puzzle_number, won, guesses FROM games WHERE user_id = ? ORDER BY puzzle_number ASC',
-      )
-      .all(req.userId) as GameRow[];
+  async stats(@Req() req: { userId: string }) {
+    const { rows } = await pool.query<GameRow>(
+      'SELECT puzzle_number, won, guesses FROM games WHERE user_id = $1 ORDER BY puzzle_number ASC',
+      [req.userId],
+    );
 
     const played = rows.length;
     const wins = rows.filter((r) => r.won).length;

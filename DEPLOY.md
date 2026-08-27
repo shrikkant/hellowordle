@@ -1,14 +1,27 @@
 # Wordbaazi — Deployment
 
-## Docker Compose (the app stack)
+## Infra stack (Postgres — start FIRST, once per server)
 
-Two containers: **web** (nginx serving the built React app, proxying `/api` to the server — one origin, no CORS) and **server** (NestJS API). Game data lives in the `wordbaazi-data` named volume, so redeploys keep player stats.
+Stateful services live in `docker-compose-infra.yml`, separate from the app stack so deploys never touch the database. It runs Postgres 17 with data on the `pgdata` volume and creates the shared `wordbaazi-infra` docker network the app joins.
+
+```bash
+# on the server, once (and after reboots if not using restart policies):
+DB_PASSWORD=<strong-password> docker compose -f docker-compose-infra.yml up -d
+```
+
+Port 5432 is bound to localhost only, for psql admin (`DB_PORT` remaps it if the box already has a Postgres). The app must be deployed with the same `DB_PASSWORD` (env var / root `.env`); with none set, both default to `wordbaazi` — fine only because the DB is unreachable from outside the docker network, but set a real one anyway.
+
+## App stack
+
+Two containers: **web** (Next.js — serves the site, proxies `/api` to the server) and **server** (NestJS API, storing users and game results in Postgres).
 
 ```bash
 cp .env.example .env          # then set JWT_SECRET (openssl rand -hex 32)
 docker compose up -d --build
 # → http://localhost:7654  (change WEB_PORT in .env)
 ```
+
+The app compose references the `wordbaazi-infra` network as external — if the infra stack isn't running you'll get "network wordbaazi-infra not found".
 
 `GOOGLE_CLIENT_ID` in `.env` is optional; it is used by the API to verify Google tokens and baked into the web bundle at build time (so rebuild after changing it). For a production domain, add that origin to the OAuth client in Google Cloud Console.
 
@@ -18,7 +31,8 @@ Useful commands:
 docker compose ps                 # status + health
 docker compose logs -f server     # API logs
 docker compose down               # stop (data volume kept)
-docker volume rm wordbaazi_wordbaazi-data   # wipe all stats (destructive)
+docker compose -f docker-compose-infra.yml exec postgres psql -U wordbaazi   # SQL console
+docker compose -f docker-compose-infra.yml exec postgres pg_dump -U wordbaazi wordbaazi > backup.sql   # backup
 ```
 
 ## Jenkins (your existing instance)

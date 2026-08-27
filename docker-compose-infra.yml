@@ -1,0 +1,31 @@
+# Stateful infrastructure — runs separately from the app stack and stays up
+# across app deploys. Start once on the server:
+#   docker compose -f docker-compose-infra.yml up -d
+# The app stack joins the shared "wordbaazi-infra" network to reach Postgres.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: wordbaazi
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-wordbaazi}
+      POSTGRES_DB: wordbaazi
+    ports:
+      # Localhost-only, for psql/admin from the server itself. Never expose publicly.
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wordbaazi -d wordbaazi"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - infra
+
+volumes:
+  pgdata:
+
+networks:
+  infra:
+    name: wordbaazi-infra

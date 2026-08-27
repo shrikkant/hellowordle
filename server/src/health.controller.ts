@@ -1,11 +1,11 @@
 import { Controller, Get } from '@nestjs/common';
-import { db } from './db';
+import { pool } from './db';
 
 @Controller('health')
 export class HealthController {
   @Get()
-  health() {
-    db.prepare('SELECT 1').get();
+  async health() {
+    await pool.query('SELECT 1');
     return { ok: true };
   }
 }

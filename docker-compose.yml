@@ -5,8 +5,10 @@ services:
       PORT: "3000"
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
-    volumes:
-      - wordbaazi-data:/app/data
+      DATABASE_URL: postgres://wordbaazi:${DB_PASSWORD:-wordbaazi}@postgres:5432/wordbaazi
+    networks:
+      - default
+      - infra
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
       interval: 15s
@@ -30,5 +32,8 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-volumes:
-  wordbaazi-data:
+networks:
+  # Created by docker-compose-infra.yml (run it first): reaches Postgres.
+  infra:
+    external: true
+    name: wordbaazi-infra
