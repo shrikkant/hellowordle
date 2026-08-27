@@ -3,3 +3,5 @@ node_modules/
 dist/
 server/data/
 .DS_Store
+.next/
+next-env.d.ts
