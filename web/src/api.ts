@@ -26,6 +26,14 @@ export function postGame(puzzleNumber: number, won: boolean, guesses: number | n
   return request('/api/games', { method: 'POST', body: JSON.stringify({ puzzleNumber, won, guesses, board }) });
 }
 
+export type ServerGame =
+  | { found: false }
+  | { found: true; won: boolean; guesses: number | null; board: string[] };
+
+export function fetchGame(puzzleNumber: number): Promise<ServerGame> {
+  return request(`/api/games/${puzzleNumber}`);
+}
+
 export function fetchStats(): Promise<Stats> {
   return request('/api/stats');
 }

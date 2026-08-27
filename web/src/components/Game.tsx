@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getAnswer, getPuzzleDate, getPuzzleNumber, isValidWord, keyboardStates } from '../game/logic';
 import type { GameStatus } from '../game/logic';
 import { getLocalStats, getResults, loadGame, recordResult, saveGame } from '../game/storage';
-import type { Stats } from '../game/storage';
-import { fetchStats, postGame } from '../api';
+import type { SavedGame, Stats } from '../game/storage';
+import { fetchGame, fetchStats, postGame } from '../api';
 import { gtmEvent } from '../gtm';
 import { useGoogleAuth } from '../useGoogleAuth';
 import Header from './Header';
@@ -39,6 +39,12 @@ export default function Game() {
   const [highContrast, setHighContrast] = useState(false);
   const [serverStats, setServerStats] = useState<Stats | null>(null);
   const [justWon, setJustWon] = useState(false);
+  // Set while a finished game is being replayed row by row; holds the full saved game.
+  const [replay, setReplay] = useState<SavedGame | null>(null);
+
+  // Latest board state, readable from async callbacks without re-running effects.
+  const guessesRef = useRef<string[]>([]);
+  guessesRef.current = guesses;
 
   const toast = useCallback((text: string, duration = 1500) => {
     const id = ++toastId;
@@ -48,17 +54,61 @@ export default function Game() {
 
   const { user, configured, renderButton, signOut } = useGoogleAuth(toast);
 
+  // Re-run a finished game's guesses in order, with the usual flip reveal per row.
+  const startReplay = useCallback((saved: SavedGame) => {
+    if (saved.guesses.length === 0) {
+      setGuesses([]);
+      setStatus(saved.status);
+      return;
+    }
+    setReplay(saved);
+    setStatus('playing');
+    setCurrent('');
+    setJustWon(false);
+    setGuesses(saved.guesses.slice(0, 1));
+    setAnimateRowIndex(0);
+  }, []);
+
   // Hydrate persisted state after mount (SSR renders the empty board).
   useEffect(() => {
     const saved = loadGame(today);
     if (saved) {
-      setGuesses(saved.guesses);
-      setStatus(saved.status);
+      if (saved.status !== 'playing') {
+        startReplay(saved);
+      } else {
+        setGuesses(saved.guesses);
+        setStatus(saved.status);
+      }
     }
     if (!localStorage.getItem('hw-seen')) setShowHelp(true);
     localStorage.setItem('hw-seen', '1');
     setHighContrast(localStorage.getItem('wb-hc') === '1');
-  }, [today]);
+  }, [today, startReplay]);
+
+  // Signed in with no local copy of this puzzle: pull a finished game from the
+  // server (played on another device or before storage was cleared) and replay it.
+  useEffect(() => {
+    if (!user || loadGame(puzzleNumber)) return;
+    let cancelled = false;
+    fetchGame(puzzleNumber)
+      .then((game) => {
+        if (cancelled || !game.found || game.board.length === 0) return;
+        // Don't clobber a game the user started while the fetch was in flight.
+        if (guessesRef.current.length > 0) return;
+        const saved: SavedGame = {
+          puzzleNumber,
+          guesses: game.board,
+          status: game.won ? 'won' : 'lost',
+        };
+        saveGame(saved);
+        recordResult(puzzleNumber, game.won, game.guesses);
+        startReplay(saved);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user, puzzleNumber, startReplay]);
 
   useEffect(() => {
     document.body.classList.toggle('high-contrast', highContrast);
@@ -99,6 +149,21 @@ export default function Game() {
   );
 
   const onRevealed = useCallback(() => {
+    if (replay) {
+      const next = guesses.length;
+      if (next < replay.guesses.length) {
+        setGuesses(replay.guesses.slice(0, next + 1));
+        setAnimateRowIndex(next);
+      } else {
+        // Replay finished: restore the recorded outcome without re-saving or re-posting.
+        setAnimateRowIndex(null);
+        setStatus(replay.status);
+        if (replay.status === 'won') setJustWon(true);
+        else toast(answer.toUpperCase(), 3500);
+        setReplay(null);
+      }
+      return;
+    }
     setAnimateRowIndex(null);
     const last = guesses[guesses.length - 1];
     if (last === answer) {
@@ -108,7 +173,7 @@ export default function Game() {
     } else {
       saveGame({ puzzleNumber, guesses, status: 'playing' });
     }
-  }, [guesses, answer, finishGame, puzzleNumber]);
+  }, [replay, guesses, answer, finishGame, puzzleNumber, toast]);
 
   const onKey = useCallback(
     (key: string) => {
@@ -164,13 +229,17 @@ export default function Game() {
       if (animateRowIndex !== null) return; // don't switch mid-reveal
       const saved = loadGame(n);
       setPuzzleNumber(n);
-      setGuesses(saved?.guesses ?? []);
-      setStatus(saved?.status ?? 'playing');
       setCurrent('');
       setJustWon(false);
       setShowArchive(false);
+      if (saved && saved.status !== 'playing') {
+        startReplay(saved);
+      } else {
+        setGuesses(saved?.guesses ?? []);
+        setStatus(saved?.status ?? 'playing');
+      }
     },
-    [animateRowIndex]
+    [animateRowIndex, startReplay]
   );
 
   const stats = user && serverStats ? serverStats : getLocalStats();

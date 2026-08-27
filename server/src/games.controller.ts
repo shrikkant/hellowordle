@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { pool } from './db';
 import { AuthGuard } from './auth.guard';
 
@@ -39,6 +39,28 @@ export class GamesController {
       [req.userId, body.puzzleNumber, body.won, body.guesses, JSON.stringify(body.board)],
     );
     return { ok: true };
+  }
+
+  @Get('games/:puzzleNumber')
+  async getGame(@Req() req: { userId: string }, @Param('puzzleNumber') puzzleNumber: string) {
+    const n = Number(puzzleNumber);
+    if (!Number.isInteger(n) || n < 0) {
+      throw new BadRequestException('puzzleNumber must be a non-negative integer');
+    }
+    const { rows } = await pool.query<{ won: boolean; guesses: number | null; board_json: string }>(
+      'SELECT won, guesses, board_json FROM games WHERE user_id = $1 AND puzzle_number = $2',
+      [req.userId, n],
+    );
+    if (rows.length === 0) return { found: false };
+    const row = rows[0];
+    let board: string[] = [];
+    try {
+      const parsed = JSON.parse(row.board_json);
+      if (Array.isArray(parsed)) board = parsed.filter((w): w is string => typeof w === 'string');
+    } catch {
+      // corrupt board_json: report the result without a board
+    }
+    return { found: true, won: row.won, guesses: row.guesses, board };
   }
 
   @Get('stats')
