@@ -8,6 +8,7 @@ import 'game.dart';
 import 'store.dart';
 import 'theme.dart';
 import 'widgets/archive.dart';
+import 'widgets/google_button.dart';
 import 'widgets/how_to_play.dart';
 import 'widgets/keyboard.dart';
 import 'widgets/stats_sheet.dart';
@@ -332,15 +333,23 @@ class _GameScreenState extends State<GameScreen> {
                 },
               ),
             ),
-            ListTile(
-              leading: Icon(user == null ? Icons.login : Icons.logout, color: ink),
-              title: Text(user == null ? 'Sign in with Google' : 'Sign out',
-                  style: const TextStyle(color: ink)),
-              onTap: () {
-                Navigator.pop(context);
-                user == null ? _signIn() : _signOut();
-              },
-            ),
+            if (user == null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: GoogleSignInButton(onPressed: () {
+                  Navigator.pop(context);
+                  _signIn();
+                }),
+              )
+            else
+              ListTile(
+                leading: const Icon(Icons.logout, color: ink),
+                title: const Text('Sign out', style: TextStyle(color: ink)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _signOut();
+                },
+              ),
             const SizedBox(height: 12),
           ],
         ),
@@ -383,14 +392,16 @@ class _GameScreenState extends State<GameScreen> {
               decoration: const BoxDecoration(
                 border: Border(bottom: BorderSide(color: emptyBorder)),
               ),
-              child: Row(
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.menu, color: ink),
-                    onPressed: _showArchive,
-                  ),
-                  Expanded(
-                    child: Center(
+                  // Title centered on the full header width; padded past the
+                  // icon clusters and scaled down on narrow screens so the
+                  // icons never overlap it.
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 124),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
                       child: Text.rich(
                         TextSpan(
                           style: const TextStyle(
@@ -409,25 +420,39 @@ class _GameScreenState extends State<GameScreen> {
                       ),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.leaderboard_outlined, color: ink),
-                    onPressed: _showStats,
+                  Row(
+                    children: [
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.menu, color: ink),
+                        onPressed: _showArchive,
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.leaderboard_outlined, color: ink),
+                        onPressed: _showStats,
+                      ),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.help_outline, color: ink),
+                        onPressed: () =>
+                            showHowToPlay(context, onSignInTap: _signIn),
+                      ),
+                      if (user == null)
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          icon: const Icon(Icons.settings, color: ink),
+                          onPressed: _showSettings,
+                        )
+                      else
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: GestureDetector(
+                              onTap: _showSettings, child: _avatar(user, 28)),
+                        ),
+                    ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.help_outline, color: ink),
-                    onPressed: () =>
-                        showHowToPlay(context, onSignInTap: _signIn),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.settings, color: ink),
-                    onPressed: _showSettings,
-                  ),
-                  if (user != null)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4, right: 4),
-                      child: GestureDetector(
-                          onTap: _showSettings, child: _avatar(user, 28)),
-                    ),
                 ],
               ),
             ),

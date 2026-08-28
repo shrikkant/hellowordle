@@ -1,4 +1,4 @@
-package com.hellowordle.hellowordle
+package com.wordbaazi.app
 
 import io.flutter.embedding.android.FlutterActivity
 

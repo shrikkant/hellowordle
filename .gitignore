@@ -1,7 +1,12 @@
 .env
+# Editor backups of env files — these hold real secrets (JWT_SECRET etc.)
+*.env~
+.env~
 node_modules/
 dist/
 server/data/
 .DS_Store
 .next/
 next-env.d.ts
+# Zipped duplicate of design/design/assets/ — the unpacked files are tracked
+design/assets.zip

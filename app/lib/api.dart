@@ -11,6 +11,11 @@ import 'game.dart';
 const apiBase =
     String.fromEnvironment('API_BASE', defaultValue: 'http://localhost:3000');
 
+/// The Web OAuth client ID (same value as the server's GOOGLE_CLIENT_ID).
+/// Google mints ID tokens with this as the audience so the server can verify
+/// them. Pass at build time: --dart-define=GOOGLE_SERVER_CLIENT_ID=...
+const _googleServerClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
+
 class ApiException implements Exception {
   ApiException(this.message);
   final String message;
@@ -23,9 +28,14 @@ class Api {
   /// Returns {token, user}. Throws [ApiException] with a readable message.
   static Future<Map<String, dynamic>> signInWithGoogle() async {
     GoogleSignInAccount account;
+    if (_googleServerClientId.isEmpty) {
+      throw ApiException(
+          'This build has no Google client ID. Rebuild with '
+          '--dart-define=GOOGLE_SERVER_CLIENT_ID=<web-client-id>');
+    }
     try {
       final signIn = GoogleSignIn.instance;
-      await signIn.initialize();
+      await signIn.initialize(serverClientId: _googleServerClientId);
       account = await signIn.authenticate(scopeHint: const ['email']);
     } on GoogleSignInException catch (e) {
       if (e.code == GoogleSignInExceptionCode.canceled) {
