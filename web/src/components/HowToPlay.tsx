@@ -15,10 +15,12 @@ function ExampleRow({ word, highlight, state }: { word: string; highlight: numbe
 interface HowToPlayProps {
   onClose: () => void;
   signedIn: boolean;
-  onSignIn: () => void;
+  configured: boolean;
+  renderButton: (el: HTMLElement | null) => void;
+  onSignIn: () => void; // fallback when Google Sign-In isn't configured
 }
 
-export default function HowToPlay({ onClose, signedIn, onSignIn }: HowToPlayProps) {
+export default function HowToPlay({ onClose, signedIn, configured, renderButton, onSignIn }: HowToPlayProps) {
   return (
     <Modal onClose={onClose}>
       <div className="htp">
@@ -54,12 +56,18 @@ export default function HowToPlay({ onClose, signedIn, onSignIn }: HowToPlayProp
                 <path d="M4 20V10h3v10H4Zm6.5 0V4h3v16h-3ZM17 20v-7h3v7h-3Z" />
               </svg>
             </div>
-            <span>
-              <button className="link-btn" onClick={onSignIn}>
-                Sign in with Google
-              </button>{' '}
-              to link your stats.
-            </span>
+            <div className="signin-note-body">
+              <span>Link your stats across devices.</span>
+              {/* Google renders its own branded button; the link is only a
+                  fallback for local builds with no client ID configured. */}
+              {configured ? (
+                <div ref={renderButton} />
+              ) : (
+                <button className="link-btn" onClick={onSignIn}>
+                  Sign in with Google
+                </button>
+              )}
+            </div>
           </div>
         )}
         <p className="footer-note">A new puzzle drops every day at midnight.</p>

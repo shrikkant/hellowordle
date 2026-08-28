@@ -296,7 +296,15 @@ export default function Game() {
           onClose={() => setShowArchive(false)}
         />
       )}
-      {showHelp && <HowToPlay onClose={() => setShowHelp(false)} signedIn={!!user} onSignIn={openSignIn} />}
+      {showHelp && (
+        <HowToPlay
+          onClose={() => setShowHelp(false)}
+          signedIn={!!user}
+          configured={configured}
+          renderButton={renderButton}
+          onSignIn={openSignIn}
+        />
+      )}
       {showStats && (
         <StatsPanel
           stats={stats}

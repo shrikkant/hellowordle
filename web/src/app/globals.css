@@ -292,6 +292,13 @@ body {
   font-size: 16px;
   line-height: 1.4;
 }
+/* Stacks the caption above Google's button, which is too tall to sit inline. */
+.htp .signin-note-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
 .signin-badge {
   width: 44px;
   height: 44px;
