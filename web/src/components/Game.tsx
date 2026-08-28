@@ -303,6 +303,8 @@ export default function Game() {
           user={user}
           highlightGuess={todayWin}
           onClose={() => setShowStats(false)}
+          configured={configured}
+          renderButton={renderButton}
           onSignIn={openSignIn}
           onSignOut={() => {
             signOut();
@@ -359,8 +361,8 @@ export default function Game() {
             ) : (
               <div className="signin-cta">
                 <span>
-                  Google Sign-In isn’t configured yet. Set <code>VITE_GOOGLE_CLIENT_ID</code> in <code>web/.env</code> — see the
-                  README.
+                  Google Sign-In isn’t configured yet. Set <code>NEXT_PUBLIC_GOOGLE_CLIENT_ID</code> in{' '}
+                  <code>web/.env</code> — see the README.
                 </span>
               </div>
             )}

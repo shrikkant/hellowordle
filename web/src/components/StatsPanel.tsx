@@ -6,11 +6,22 @@ interface StatsPanelProps {
   user: User | null;
   highlightGuess: number | null; // today's winning guess count
   onClose: () => void;
-  onSignIn: () => void;
+  configured: boolean;
+  renderButton: (el: HTMLElement | null) => void;
+  onSignIn: () => void; // fallback when Google Sign-In isn't configured
   onSignOut: () => void;
 }
 
-export default function StatsPanel({ stats, user, highlightGuess, onClose, onSignIn, onSignOut }: StatsPanelProps) {
+export default function StatsPanel({
+  stats,
+  user,
+  highlightGuess,
+  onClose,
+  configured,
+  renderButton,
+  onSignIn,
+  onSignOut,
+}: StatsPanelProps) {
   const max = Math.max(1, ...Object.values(stats.distribution));
   return (
     <Modal onClose={onClose}>
@@ -64,9 +75,15 @@ export default function StatsPanel({ stats, user, highlightGuess, onClose, onSig
         ) : (
           <div className="signin-cta">
             <span>Sign in with Google to save your stats.</span>
-            <button className="link-btn" onClick={onSignIn}>
-              Sign in with Google
-            </button>
+            {/* Google renders its own branded button; the link is only a
+                fallback for local builds with no client ID configured. */}
+            {configured ? (
+              <div ref={renderButton} />
+            ) : (
+              <button className="link-btn" onClick={onSignIn}>
+                Sign in with Google
+              </button>
+            )}
           </div>
         )}
       </div>
