@@ -22,6 +22,7 @@ export default function SeoPage({ children }: { children: ReactNode }) {
           <Link href="/guess-the-word-game">Guess the Word Game</Link>
           <Link href="/word-coach">Word Coach</Link>
           <Link href="/english-word-games">English Word Games</Link>
+          <Link href="/privacy">Privacy</Link>
         </nav>
       </article>
     </main>
