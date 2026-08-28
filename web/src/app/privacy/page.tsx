@@ -57,8 +57,9 @@ export default function Page() {
       <h2>Retention and Deletion</h2>
       <p>
         We keep your account data for as long as you have an account. To delete your account and all game data linked to
-        it, email us at the address below from the Google account you signed in with, and we will remove it. Local data
-        on your own device can be cleared at any time by clearing the site&rsquo;s browser data or uninstalling the app.
+        it, use our <Link href="/data-deletion">data deletion request page</Link> — no sign-in needed — or email us at
+        the address below. Local data on your own device can be cleared at any time by clearing the site&rsquo;s browser
+        data or uninstalling the app.
       </p>
 
       <h2>Children</h2>

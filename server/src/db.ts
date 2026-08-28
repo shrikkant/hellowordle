@@ -23,5 +23,16 @@ export async function initDb(): Promise<void> {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       PRIMARY KEY (user_id, puzzle_number)
     );
+    CREATE TABLE IF NOT EXISTS deletion_requests (
+      id BIGSERIAL PRIMARY KEY,
+      email TEXT NOT NULL,
+      note TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    -- One open request per address, so a repeated submit is a no-op rather
+    -- than filling the table. Resolving a request frees the address again.
+    CREATE UNIQUE INDEX IF NOT EXISTS deletion_requests_pending_email
+      ON deletion_requests (email) WHERE status = 'pending';
   `);
 }

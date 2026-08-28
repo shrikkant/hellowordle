@@ -52,6 +52,7 @@ export default function SeoContent() {
         <Link href="/word-coach">Word Coach</Link>
         <Link href="/english-word-games">English Word Games</Link>
         <Link href="/privacy">Privacy</Link>
+        <Link href="/data-deletion">Delete My Data</Link>
       </nav>
     </section>
   );

@@ -497,3 +497,47 @@ body {
   font-size: 14px;
 }
 .seo-footer-nav a { color: #6b7280; }
+
+/* Data deletion request form */
+.deletion-form { display: flex; flex-direction: column; gap: 6px; margin: 16px 0 8px; }
+.deletion-form label {
+  margin-top: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.deletion-form .field-hint {
+  display: block;
+  font-weight: 400;
+  font-size: 13px;
+  color: #6b7280;
+}
+.deletion-form input,
+.deletion-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-filled);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 16px; /* iOS zooms the page on focus below 16px */
+  color: var(--text);
+  background: #fff;
+}
+.deletion-form input:focus,
+.deletion-form textarea:focus { outline: 2px solid var(--correct); outline-offset: 1px; }
+.deletion-form textarea { resize: vertical; }
+.deletion-form .cta-btn { align-self: flex-start; margin-top: 16px; border: none; cursor: pointer; font-size: 16px; }
+.deletion-form .cta-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* Outcome states are separated by lightness and a bold lead-in word rather
+   than hue, so they stay distinguishable with colour vision deficiency. */
+.form-note {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border-left: 4px solid;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.form-note-ok { background: #f1f5f9; border-left-color: var(--absent); color: var(--text); }
+.form-note-error { background: #fdf3e3; border-left-color: var(--present); color: var(--text); }
