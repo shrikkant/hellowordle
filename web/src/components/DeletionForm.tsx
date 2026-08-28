@@ -39,7 +39,7 @@ export default function DeletionForm() {
       <div className="form-note form-note-ok" role="status">
         <strong>Request received.</strong> We will delete the account for <strong>{email}</strong> and all game data
         linked to it, and email you at that address once it is done. If you do not hear back within 30 days, contact us
-        at <a href="mailto:shrikkant@gmail.com">shrikkant@gmail.com</a>.
+        at <a href="mailto:shrikant@rentacross.com">shrikant@rentacross.com</a>.
       </div>
     );
   }

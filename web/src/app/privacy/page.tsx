@@ -77,7 +77,7 @@ export default function Page() {
 
       <h2>Contact</h2>
       <p>
-        Questions or deletion requests: <a href="mailto:shrikkant@gmail.com">shrikkant@gmail.com</a>. You can also read
+        Questions or deletion requests: <a href="mailto:shrikant@rentacross.com">shrikant@rentacross.com</a>. You can also read
         more <Link href="/english-word-games">about Wordbaazi</Link> or <Link href="/">play today&rsquo;s puzzle</Link>.
       </p>
     </SeoPage>
